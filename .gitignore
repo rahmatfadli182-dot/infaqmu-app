@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Environment variables / API keys
+.env
+.env.local
+.env.*.local
+
+# Build / logs (opsional, sesuai framework)
+.next/
+dist/
+build/
+*.log

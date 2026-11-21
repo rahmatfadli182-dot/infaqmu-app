@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>INFAQMU • Transparansi Infaq & Sedekah Cloud</title>
+
+    <!-- Preconnect untuk mempercepat pemuatan font & CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS & Pustaka Eksternal -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- Gaya Utama -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen antialiased selection:bg-emerald-200 selection:text-emerald-950">
+
+    <!-- NOTIFIKASI TOAST -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[92%] max-w-sm pointer-events-none"></div>
+
+    <!-- ===================================================================== -->
+    <!-- LAYAR 1: GERBANG AKSES PIN 6 DIGIT (JAMAAH & PANITIA/ADMIN)           -->
+    <!-- ===================================================================== -->
+    <section id="access-gate" class="min-h-screen flex items-center justify-center p-4 bg-slate-100">
+        <div class="w-full max-w-[400px] bg-white rounded-[32px] shadow-2xl overflow-hidden border border-slate-200/80">
+            <div class="bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 px-6 pt-8 pb-7 text-center text-white relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-emerald-500/10 pointer-events-none"></div>
+                <div class="w-20 h-20 rounded-full story-ring-ig mx-auto mb-3.5 shadow-lg">
+                    <div class="w-full h-full rounded-full bg-slate-950 flex items-center justify-center">
+                        <svg class="w-9 h-9 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L4 7v13h16V7l-8-5z"/>
+                            <path d="M9 21v-6a3 3 0 0 1 6 0v6"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <h1 id="gate-org-name" class="font-display font-extrabold text-xl tracking-tight text-white">InfaqMU Peduli</h1>
+                <p id="gate-org-handle" class="text-xs text-emerald-300/90 font-medium mt-0.5">@prm.bandarmalela • Berita & Transparansi</p>
+
+                <div class="mt-3.5">
+                    <span id="gate-sync-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/25 text-[11px] font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span>Siap Digunakan</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-100 mb-5">
+                    <button type="button" id="tab-role-viewer" onclick="switchGateRole('viewer')" class="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all bg-white text-emerald-800 shadow-sm">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        <span>Jamaah</span>
+                    </button>
+                    <button type="button" id="tab-role-admin" onclick="switchGateRole('admin')" class="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all text-slate-500 hover:text-slate-900">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>Panitia / Admin</span>
+                    </button>
+                </div>
+
+                <form onsubmit="handlePinSubmit(event)">
+                    <p id="pin-prompt-label" class="text-center text-xs font-bold text-slate-700 mb-3">
+                        Masukkan Kode PIN 6 Digit dari Admin
+                    </p>
+
+                    <div id="pin-inputs-container" class="grid grid-cols-6 gap-2 mb-3">
+                        <input type="password" inputmode="numeric" maxlength="1" class="pin-box w-full h-12 text-center font-display font-extrabold text-lg rounded-xl border-2 border-slate-200 focus:border-emerald-600 outline-none bg-slate-50/70" aria-label="Digit 1">
+                        <input type="password" inputmode="numeric" maxlength="1" class="pin-box w-full h-12 text-center font-display font-extrabold text-lg rounded-xl border-2 border-slate-200 focus:border-emerald-600 outline-none bg-slate-50/70" aria-label="Digit 2">
+                        <input type="password" inputmode="numeric" maxlength="1" class="pin-box w-full h-12 text-center font-display font-extrabold text-lg rounded-xl border-2 border-slate-200 focus:border-emerald-600 outline-none bg-slate-50/70" aria-label="Digit 3">
+                        <input type="password" inputmode="numeric" maxlength="1" class="pin-box w-full h-12 text-center font-display font-extrabold text-lg rounded-xl border-2 border-slate-200 focus:border-emerald-600 outline-none bg-slate-50/70" aria-label="Digit 4">
+                        <input type="password" inputmode="numeric" maxlength="1" class="pin-box w-full h-12 text-center font-display font-extrabold text-lg rounded-xl border-2 border-slate-200 focus:border-emerald-600 outline-none bg-slate-50/70" aria-label="Digit 5">
+                        <input type="password" inputmode="numeric" maxlength="1" class="pin-box w-full h-12 text-center font-display font-extrabold text-lg rounded-xl border-2 border-slate-200 focus:border-emerald-600 outline-none bg-slate-50/70" aria-label="Digit 6">
+                    </div>
+
+                    <p id="pin-error-msg" class="hidden text-center text-xs font-bold text-rose-600 mb-3"></p>
+
+                    <div class="flex items-center justify-between text-xs text-slate-500 mb-4">
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                            <input type="checkbox" id="toggle-show-pin" onchange="togglePinVisibility()" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                            <span>Tampilkan angka PIN</span>
+                        </label>
+                        <button type="button" onclick="clearPinInputs()" class="font-semibold text-slate-500 hover:text-slate-800">Hapus PIN</button>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 mb-4 select-none">
+                        <button type="button" onclick="pressKeypad('1')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 font-display font-bold text-base text-slate-800 transition-all">1</button>
+                        <button type="button" onclick="pressKeypad('2')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 font-display font-bold text-base text-slate-800 transition-all">2</button>
+                        <button type="button" onclick="pressKeypad('3')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 font-display font-bold text-base text-slate-800 transition-all">3</button>
+                        <button type="button" onclick="pressKeypad('4')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 font-display font-bold text-base text-slate-800 transition-all">4</button>
+                        <button type="button" onclick="pressKeypad('5')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 font-display font-bold text-base text-slate-800 transition-all">5</button>
+                        <button type="button" onclick="pressKeypad('6')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 font-display font-bold text-base text-slate-800 transition-all">6</button>
+                        <button type="button" onclick="pressKeypad('7')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 font-display font-bold text-base text-slate-800 transition-all">7</button>
+                        <button type="button" onclick="pressKeypad('8')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 font-display font-bold text-base text-slate-800 transition-all">8</button>
+                        <button type="button" onclick="pressKeypad('9')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 font-display font-bold text-base text-slate-800 transition-all">9</button>
+                        <button type="button" onclick="clearPinInputs()" class="py-3 rounded-2xl bg-slate-100/70 hover:bg-slate-200 active:scale-95 text-xs font-bold text-slate-600 transition-all">Reset</button>
+                        <button type="button" onclick="pressKeypad('0')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 font-display font-bold text-base text-slate-800 transition-all">0</button>
+                        <button type="button" onclick="backspaceKeypad()" class="py-3 rounded-2xl bg-slate-100/70 hover:bg-slate-200 active:scale-95 flex items-center justify-center text-slate-600 transition-all" aria-label="Hapus satu digit">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+                        </button>
+                    </div>
+
+                    <button type="submit" id="btn-unlock" class="w-full py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-emerald-800 text-white font-bold text-sm shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                        <span>Buka Berita & Transparansi</span>
+                    </button>
+                </form>
+
+                <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Akses cepat:</span>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="autoFillDemoPin('viewer')" class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100">
+                            Jamaah (<span id="hint-viewer-pin">112233</span>)
+                        </button>
+                        <button type="button" onclick="autoFillDemoPin('admin')" class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 font-bold hover:bg-amber-100">
+                            Admin (<span id="hint-admin-pin">999999</span>)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- LAYAR 2: APLIKASI UTAMA BERANDA ALA INSTAGRAM                         -->
+    <!-- ===================================================================== -->
+    <div id="main-app" class="hidden min-h-screen pb-24 max-w-[520px] mx-auto bg-white shadow-xs border-x border-slate-200/70">
+
+        <!-- TOP BAR INSTAGRAM -->
+        <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-1.5 min-w-0">
+                <span id="header-org-handle" class="font-display font-extrabold text-base text-slate-950 truncate">prm.bandarmalela</span>
+                <svg class="w-4 h-4 text-sky-500 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span id="connection-status-pill" class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span>Aktif</span>
+                </span>
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+                <span id="role-badge" class="hidden sm:inline-flex px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold">Publik</span>
+                <button type="button" onclick="handleManualRefresh()" id="btn-manual-refresh" class="p-2 rounded-full hover:bg-slate-100 text-slate-700 transition-colors" title="Sinkronkan Cloud">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                </button>
+                <button type="button" onclick="toggleSearchBar()" class="p-2 rounded-full hover:bg-slate-100 text-slate-700 transition-colors" title="Cari Postingan">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </button>
+                <button type="button" id="btn-open-security" onclick="openSecurityModal()" class="hidden p-2 rounded-full hover:bg-amber-50 text-amber-700 transition-colors" title="Pengaturan Admin & Cloud">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+                <button type="button" onclick="lockApplication()" class="p-2 rounded-full hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors" title="Kunci Aplikasi">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- BAR PENCARIAN TERSEMBUNYI -->
+        <div id="search-bar-wrapper" class="hidden px-4 py-2.5 bg-slate-50 border-b border-slate-200/70">
+            <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200">
+                <input type="text" id="search-input" oninput="refreshDashboard()" placeholder="Cari berita kegiatan atau kategori..." class="w-full text-xs outline-none">
+                <button type="button" onclick="clearSearch()" class="text-xs font-bold text-slate-400 hover:text-slate-700">Tutup</button>
+            </div>
+        </div>
+
+        <!-- PROFILE HEADER ALA INSTAGRAM -->
+        <section class="px-4 pt-4 pb-3">
+            <div class="flex items-center gap-4">
+                <button type="button" onclick="openStoryViewer(0)" class="w-20 h-20 rounded-full story-ring-ig shrink-0 active:scale-95 transition-transform">
+                    <div class="w-full h-full rounded-full bg-emerald-950 text-white flex flex-col items-center justify-center border-2 border-white">
+                        <span class="font-display font-extrabold text-xs tracking-wider text-emerald-300">INFAQ</span>
+                        <span class="font-display font-extrabold text-sm leading-none">MU</span>
+                    </div>
+                </button>
+
+                <div class="flex-1 grid grid-cols-3 text-center gap-1">
+                    <button type="button" onclick="switchMainView('feed')" class="py-1 rounded-xl hover:bg-slate-50">
+                        <div id="profile-stat-posts" class="font-display font-extrabold text-base text-slate-950">0</div>
+                        <div class="text-[11px] text-slate-500 font-medium">Berita</div>
+                    </button>
+                    <button type="button" onclick="openStoryViewer(0)" class="py-1 rounded-xl hover:bg-emerald-50/70">
+                        <div id="profile-stat-balance" class="font-display font-extrabold text-base text-emerald-700">Rp0</div>
+                        <div class="text-[11px] text-slate-500 font-medium">Saldo Kas</div>
+                    </button>
+                    <button type="button" onclick="openStoryViewer(2)" class="py-1 rounded-xl hover:bg-amber-50/70">
+                        <div id="profile-stat-out" class="font-display font-extrabold text-base text-amber-700">Rp0</div>
+                        <div class="text-[11px] text-slate-500 font-medium">Tersalurkan</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <div class="flex items-center gap-1.5">
+                    <h2 id="header-org-name" class="font-display font-bold text-sm text-slate-950">InfaqMU Peduli</h2>
+                    <span id="role-badge-mobile" class="sm:hidden px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">Publik</span>
+                </div>
+                <p id="header-org-bio" class="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                    Laporan Transparansi Penerimaan & Penyaluran Infaq Sedekah • Terverifikasi Bendahara
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mt-3.5">
+                <button type="button" onclick="openStoryViewer(0)" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors">
+                    Cek Saldo Kas Aktif
+                </button>
+                <button type="button" id="btn-profile-secondary" onclick="switchMainView('stats')" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs transition-colors">
+                    Grafik Transparansi
+                </button>
+            </div>
+        </section>
+
+        <!-- BARISAN INSTAGRAM STORY HIGHLIGHTS -->
+        <section class="px-4 py-2.5 border-b border-slate-100 overflow-x-auto no-scrollbar">
+            <div class="flex items-center gap-4 min-w-max">
+                <button type="button" onclick="openStoryViewer(0)" class="flex flex-col items-center gap-1.5 w-16 group">
+                    <div class="w-14 h-14 rounded-full story-ring-emerald">
+                        <div class="w-full h-full rounded-full bg-emerald-50 border-2 border-white flex flex-col items-center justify-center text-emerald-800">
+                            <span id="story-balance-short" class="font-display font-extrabold text-[11px]">Rp86Rb</span>
+                        </div>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-700 truncate w-full text-center">Saldo Kas</span>
+                </button>
+
+                <button type="button" onclick="openStoryViewer(1)" class="flex flex-col items-center gap-1.5 w-16 group">
+                    <div class="w-14 h-14 rounded-full story-ring-ig">
+                        <div class="w-full h-full rounded-full bg-sky-50 border-2 border-white flex flex-col items-center justify-center text-sky-800">
+                            <span id="story-in-short" class="font-display font-extrabold text-[11px]">Rp2,1Jt</span>
+                        </div>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-700 truncate w-full text-center">Dana Masuk</span>
+                </button>
+
+                <button type="button" onclick="openStoryViewer(2)" class="flex flex-col items-center gap-1.5 w-16 group">
+                    <div class="w-14 h-14 rounded-full story-ring-ig">
+                        <div class="w-full h-full rounded-full bg-amber-50 border-2 border-white flex flex-col items-center justify-center text-amber-800">
+                            <span id="story-out-short" class="font-display font-extrabold text-[11px]">Rp2Jt</span>
+                        </div>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-700 truncate w-full text-center">Tersalurkan</span>
+                </button>
+
+                <button type="button" onclick="openStoryViewer(3)" class="flex flex-col items-center gap-1.5 w-16 group">
+                    <div class="w-14 h-14 rounded-full bg-slate-200 p-[2px]">
+                        <div class="w-full h-full rounded-full bg-white border-2 border-white flex flex-col items-center justify-center text-slate-700">
+                            <span id="story-ratio-short" class="font-display font-extrabold text-[11px]">96%</span>
+                        </div>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-700 truncate w-full text-center">Amanah</span>
+                </button>
+
+                <button type="button" id="story-highlight-wa" onclick="switchMainView('wa')" class="hidden flex-col items-center gap-1.5 w-16 group">
+                    <div class="w-14 h-14 rounded-full story-ring-emerald">
+                        <div class="w-full h-full rounded-full bg-slate-900 border-2 border-white flex flex-col items-center justify-center text-emerald-400">
+                            <span class="font-display font-extrabold text-[11px]">WA</span>
+                        </div>
+                    </div>
+                    <span class="text-[11px] font-bold text-emerald-800 truncate w-full text-center">Rekap WA</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- FILTER PERIODE BULAN & TAHUN -->
+        <section class="px-4 py-2.5 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between gap-2">
+            <span id="active-period-badge" class="text-xs font-bold text-slate-700">Oktober 2026</span>
+            <div class="flex items-center gap-1.5">
+                <select id="filter-month" onchange="refreshDashboard()" class="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 outline-none">
+                    <option value="all">Semua Bulan</option>
+                    <option value="01">Januari</option>
+                    <option value="02">Februari</option>
+                    <option value="03">Maret</option>
+                    <option value="04">April</option>
+                    <option value="05">Mei</option>
+                    <option value="06">Juni</option>
+                    <option value="07">Juli</option>
+                    <option value="08">Agustus</option>
+                    <option value="09">September</option>
+                    <option value="10" selected>Oktober</option>
+                    <option value="11">November</option>
+                    <option value="12">Desember</option>
+                </select>
+                <select id="filter-year" onchange="refreshDashboard()" class="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 outline-none">
+                    <option value="2026" selected>2026</option>
+                    <option value="2025">2025</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- TAB SWITCHER ALA INSTAGRAM -->
+        <div id="feed-mode-tabs" class="grid grid-cols-2 border-b border-slate-200 bg-white sticky top-[53px] z-20">
+            <button type="button" id="tab-subview-feed" onclick="setFeedLayoutMode('feed')" class="py-2.5 flex items-center justify-center gap-1.5 border-b-2 border-slate-900 text-slate-900 font-bold text-xs">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                <span>Beranda Berita</span>
+            </button>
+            <button type="button" id="tab-subview-grid" onclick="setFeedLayoutMode('grid')" class="py-2.5 flex items-center justify-center gap-1.5 border-b-2 border-transparent text-slate-400 font-semibold text-xs">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <span>Galeri 3×3</span>
+            </button>
+        </div>
+
+        <!-- KONTEN UTAMA 1: BERANDA BERITA & GALERI -->
+        <main id="feed-view" class="divide-y divide-slate-100"></main>
+        <section id="grid-view" class="hidden grid grid-cols-3 gap-0.5 bg-slate-100 p-0.5"></section>
+
+        <!-- KONTEN KOSONG -->
+        <div id="empty-state" class="hidden py-14 px-6 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <h3 class="font-display font-bold text-sm text-slate-800">Belum Ada Berita Kegiatan</h3>
+            <p class="text-xs text-slate-500 mt-1">Pilih "Semua Bulan" pada filter di atas atau terbitkan berita baru dari tombol Admin.</p>
+        </div>
+
+        <!-- KONTEN UTAMA 2: REKAP WA & FORM INPUT RINCIAN BULANAN (KHUSUS ADMIN) -->
+        <section id="wa-view" class="hidden p-4 space-y-4">
+            <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-emerald-950 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider">Khusus Admin</span>
+                        <h3 class="font-display font-bold text-base mt-1">Rekap Laporan WhatsApp</h3>
+                    </div>
+                    <button type="button" onclick="loadOctoberSampleTemplate()" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] font-semibold">
+                        Contoh Okt 2026
+                    </button>
+                </div>
+                <p class="text-xs text-slate-300 mt-1">Data rincian bulanan terkunci secara default agar aman. Klik tombol <strong>Edit Rincian</strong> untuk mengubah.</p>
+            </div>
+
+            <div id="wa-published-months-bar" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1"></div>
+
+            <div id="wa-admin-editor-box" class="bg-white rounded-2xl border border-slate-200 p-4 space-y-4 wa-form-locked">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <span id="wa-lock-status-badge" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                        <span>Terkunci (Mode Baca)</span>
+                    </span>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" id="btn-toggle-wa-edit" onclick="toggleWaFormEditMode(true)" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs">
+                            Edit Rincian
+                        </button>
+                        <button type="button" id="btn-cancel-wa-edit" onclick="cancelWaFormEdit()" class="hidden px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">
+                            Batal Edit
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Bulan Laporan</label>
+                        <select id="wa-input-month" onchange="onWaPeriodSelectChange()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white outline-none">
+                            <option value="01">Januari</option>
+                            <option value="02">Februari</option>
+                            <option value="03">Maret</option>
+                            <option value="04">April</option>
+                            <option value="05">Mei</option>
+                            <option value="06">Juni</option>
+                            <option value="07">Juli</option>
+                            <option value="08">Agustus</option>
+                            <option value="09">September</option>
+                            <option value="10" selected>Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Tahun</label>
+                        <input type="number" id="wa-input-year" value="2026" onchange="onWaPeriodSelectChange()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold outline-none">
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-emerald-950"># Penerimaan Dana</span>
+                        <button type="button" id="btn-add-wa-income" onclick="addWaIncomeRow()" disabled class="px-2.5 py-1 rounded-lg bg-emerald-600 disabled:opacity-40 text-white text-[11px] font-bold">
+                            + Tambah Pos
+                        </button>
+                    </div>
+
+                    <div id="wa-income-rows-container" class="space-y-2.5"></div>
+
+                    <div class="pt-2 border-t border-emerald-200/70 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-emerald-900 mb-0.5">Keterangan Sisa Saldo Lalu</label>
+                            <input type="text" id="wa-prev-label" disabled oninput="updateWaLivePreview()" class="w-full px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-white text-xs font-medium outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-emerald-900 mb-0.5">Nominal Sisa Saldo (Rp)</label>
+                            <input type="text" id="wa-prev-amount" inputmode="numeric" disabled oninput="updateWaLivePreview()" onblur="formatMoneyInputOnBlur(this)" class="w-full px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-white font-mono text-xs font-bold text-emerald-900 outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-amber-950"># Pengeluaran / Penyaluran</span>
+                        <button type="button" id="btn-add-wa-expense" onclick="addWaExpenseRow()" disabled class="px-2.5 py-1 rounded-lg bg-amber-600 disabled:opacity-40 text-white text-[11px] font-bold">
+                            + Tambah Barang
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-semibold text-amber-900 mb-0.5">Judul Kelompok Pengeluaran</label>
+                        <input type="text" id="wa-expense-group-title" disabled oninput="updateWaLivePreview()" class="w-full px-2.5 py-1.5 rounded-lg border border-amber-200 bg-white text-xs font-bold outline-none">
+                    </div>
+
+                    <div id="wa-expense-rows-container" class="space-y-2.5"></div>
+                </div>
+
+                <button type="button" id="btn-publish-wa-to-feed" onclick="saveAndPublishWaReport()" disabled class="w-full py-3 rounded-2xl bg-slate-900 hover:bg-emerald-700 disabled:opacity-45 text-white font-bold text-xs shadow-md transition-all">
+                    Simpan Laporan Bulanan ke Database
+                </button>
+            </div>
+
+            <div class="bg-[#e5ddd5] rounded-2xl p-3.5 border border-slate-200 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold text-slate-800">Pratinjau Teks WhatsApp</span>
+                    <span id="wa-preview-period-tag" class="px-2 py-0.5 rounded-full bg-white text-emerald-800 text-[10px] font-bold">Oktober 2026</span>
+                </div>
+                <pre id="wa-generated-text" class="bg-[#dcf8c6] text-slate-900 p-3.5 rounded-2xl rounded-tl-xs text-xs font-sans whitespace-pre-wrap leading-relaxed shadow-xs border border-emerald-300/60"></pre>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="copyWaReportText()" class="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 text-slate-900 font-bold text-xs shadow-xs">
+                        Salin Teks WA
+                    </button>
+                    <button type="button" onclick="shareDirectToWhatsApp()" class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs">
+                        Kirim ke WhatsApp
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- KONTEN UTAMA 3: STATISTIK & TRANSPARANSI KAS -->
+        <section id="stats-view" class="hidden p-4 space-y-4">
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80">
+                    <div class="text-[11px] font-bold text-emerald-800">Penerimaan Baru</div>
+                    <div id="stats-card-in" class="font-display font-extrabold text-base text-emerald-950 mt-1">Rp0</div>
+                    <div id="stats-sub-in" class="text-[10px] text-emerald-700 mt-0.5">-</div>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/80">
+                    <div class="text-[11px] font-bold text-amber-800">Total Penyaluran</div>
+                    <div id="stats-card-out" class="font-display font-extrabold text-base text-amber-950 mt-1">Rp0</div>
+                    <div id="stats-sub-out" class="text-[10px] text-amber-700 mt-0.5">-</div>
+                </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-white border border-slate-200">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h3 class="font-display font-bold text-sm text-slate-900">Arus Kas Tahun <span id="chart-year-label">2026</span></h3>
+                        <p class="text-[11px] text-slate-500">Perbandingan dana masuk vs tersalurkan</p>
+                    </div>
+                    <button type="button" onclick="exportToCSV()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold">
+                        Unduh CSV
+                    </button>
+                </div>
+                <div class="h-48 relative">
+                    <canvas id="monthlyChart"></canvas>
+                    <div id="fallback-bar-chart" class="hidden h-full flex items-end justify-between gap-1 pt-4"></div>
+                </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-white border border-slate-200 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="font-display font-bold text-sm text-slate-900">Realisasi Penyaluran</h3>
+                        <p id="category-period-subtitle" class="text-[11px] text-slate-500">-</p>
+                    </div>
+                    <span id="disbursement-ratio" class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold">0%</span>
+                </div>
+                <div id="category-breakdown-list" class="space-y-2.5"></div>
+            </div>
+        </section>
+
+        <!-- BOTTOM NAVIGATION BAR -->
+        <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 z-30 bg-slate-950/95 backdrop-blur-md text-white px-3 py-2 rounded-full shadow-2xl border border-white/10 flex items-center gap-1.5 no-print">
+            <button type="button" onclick="switchMainView('feed')" id="nav-btn-feed" class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/15 text-emerald-400 font-bold text-xs transition-all">
+                <span>Beranda</span>
+            </button>
+
+            <button type="button" id="fab-create-post" onclick="openNewsModal()" class="hidden items-center justify-center w-9 h-9 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-lg shadow-md transition-transform active:scale-95" title="Posting Berita Baru">
+                +
+            </button>
+
+            <button type="button" id="nav-btn-wa" onclick="switchMainView('wa')" class="hidden items-center gap-1.5 px-3.5 py-2 rounded-full text-slate-400 hover:text-white font-semibold text-xs transition-all">
+                <span>Rekap WA</span>
+            </button>
+
+            <button type="button" onclick="switchMainView('stats')" id="nav-btn-stats" class="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-slate-400 hover:text-white font-semibold text-xs transition-all">
+                <span>Statistik</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- MODAL 1: STORY VIEWER INTERAKTIF -->
+    <div id="story-viewer-modal" class="fixed inset-0 z-50 bg-slate-950/95 hidden items-center justify-center p-4">
+        <div class="w-full max-w-[380px] rounded-3xl bg-gradient-to-br from-emerald-900 via-slate-900 to-slate-950 text-white p-5 border border-white/15 shadow-2xl relative">
+            <div class="grid grid-cols-4 gap-1.5 mb-4">
+                <div class="h-1 rounded-full bg-white/20 overflow-hidden"><div id="story-prog-0" class="h-full bg-white w-0"></div></div>
+                <div class="h-1 rounded-full bg-white/20 overflow-hidden"><div id="story-prog-1" class="h-full bg-white w-0"></div></div>
+                <div class="h-1 rounded-full bg-white/20 overflow-hidden"><div id="story-prog-2" class="h-full bg-white w-0"></div></div>
+                <div class="h-1 rounded-full bg-white/20 overflow-hidden"><div id="story-prog-3" class="h-full bg-white w-0"></div></div>
+            </div>
+
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-emerald-500 text-slate-950 font-display font-extrabold text-xs flex items-center justify-center">MU</div>
+                    <div>
+                        <div id="story-viewer-title" class="text-xs font-bold">Saldo Kas Tersedia</div>
+                        <div id="story-viewer-subtitle" class="text-[10px] text-emerald-300">Audit Transparansi</div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeStoryViewer()" class="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold">Tutup</button>
+            </div>
+
+            <div id="story-viewer-body" class="min-h-[210px] flex flex-col justify-center"></div>
+
+            <div class="grid grid-cols-2 gap-2 mt-6">
+                <button type="button" onclick="prevStorySlide()" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold">Sebelumnya</button>
+                <button type="button" onclick="nextStorySlide()" class="py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold">Berikutnya</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: TAMBAH / EDIT BERITA KEGIATAN (ADMIN) -->
+    <div id="news-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-[480px] w-full p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <button type="button" onclick="closeNewsModal()" class="text-xs font-semibold text-slate-500">Batal</button>
+                <h3 id="modal-news-title" class="font-display font-bold text-base text-slate-900">Posting Berita Baru</h3>
+                <button type="submit" form="news-form" class="text-xs font-bold text-emerald-600">Terbitkan</button>
+            </div>
+
+            <form id="news-form" onsubmit="handleSaveNews(event)" class="space-y-3.5 mt-4">
+                <input type="hidden" id="news-id">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Judul Berita / Dokumentasi *</label>
+                    <input type="text" id="news-title" required placeholder="Contoh: Penyaluran 19 Paket Sembako" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none focus:border-emerald-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Isi Berita / Caption Lengkap *</label>
+                    <textarea id="news-description" rows="4" required placeholder="Tulis berita kegiatan penyaluran atau pengumuman untuk jamaah..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none focus:border-emerald-600 resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal *</label>
+                        <input type="date" id="news-date" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Kategori *</label>
+                        <select id="news-category" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white outline-none"></select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Tema Warna Poster</label>
+                    <select id="news-theme" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white outline-none">
+                        <option value="emerald">Hijau Emerald (Amanah)</option>
+                        <option value="blue">Biru Indigo (Pengumuman)</option>
+                        <option value="amber">Oranye Amber (Penyaluran)</option>
+                        <option value="rose">Merah Rose (Santunan)</option>
+                        <option value="purple">Ungu Violet (Program Dakwah)</option>
+                    </select>
+                </div>
+                <button type="submit" id="btn-submit-news" class="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md">
+                    Terbitkan ke Beranda
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: PENGATURAN ADMIN, SUPABASE CLOUD & AUDIT SALDO -->
+    <div id="security-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-[480px] w-full p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="font-display font-bold text-base text-slate-900">Pengaturan Admin & Cloud</h3>
+                <button type="button" onclick="closeSecurityModal()" class="text-xs font-bold text-slate-500">Tutup</button>
+            </div>
+
+            <form onsubmit="handleSaveSecuritySettings(event)" class="space-y-4 mt-4">
+                <div class="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 space-y-2.5">
+                    <div class="text-xs font-bold text-sky-950">Koneksi Database Supabase</div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-0.5">Supabase Project URL</label>
+                        <input type="url" id="set-sb-url" class="w-full px-3 py-2 rounded-xl border border-sky-200 bg-white text-xs font-mono outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-0.5">Supabase Anon Public Key</label>
+                        <input type="text" id="set-sb-key" class="w-full px-3 py-2 rounded-xl border border-sky-200 bg-white text-xs font-mono outline-none">
+                    </div>
+                    <div id="sb-diagnostic-box" class="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-sky-100">
+                        Status: Siap sinkronisasi.
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="testAndSyncSupabase()" id="btn-test-sb" class="py-2 px-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold">
+                            Uji & Sinkronkan
+                        </button>
+                        <button type="button" onclick="pushLocalDataToCloud()" class="py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold">
+                            Unggah Lokal ke Cloud
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-2">
+                    <div>
+                        <div class="text-xs font-bold text-emerald-950">Audit & Rekalkulasi Saldo</div>
+                        <div class="text-[10px] text-emerald-700">Bersihkan duplikat & hitung ulang saldo murni</div>
+                    </div>
+                    <button type="button" onclick="runFullBalanceAudit()" class="px-3 py-2 rounded-xl bg-emerald-700 text-white text-[11px] font-bold shrink-0">
+                        Rekalkulasi
+                    </button>
+                </div>
+
+                <div class="space-y-2.5">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lembaga</label>
+                            <input type="text" id="set-org-name" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Username</label>
+                            <input type="text" id="set-org-handle" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Bio Lembaga</label>
+                        <input type="text" id="set-org-bio" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">PIN Jamaah (6 Digit)</label>
+                            <input type="text" id="set-viewer-pin" maxlength="6" required class="w-full px-3 py-2 rounded-xl border border-emerald-300 font-mono text-sm font-bold text-center outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">PIN Admin (6 Digit)</label>
+                            <input type="text" id="set-admin-pin" maxlength="6" required class="w-full px-3 py-2 rounded-xl border border-amber-300 font-mono text-sm font-bold text-center outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                    <button type="button" onclick="resetDemoData()" class="text-xs font-bold text-rose-600 hover:underline">Reset Contoh</button>
+                    <button type="submit" class="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold">Simpan Pengaturan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI HAPUS -->
+    <div id="delete-modal" class="fixed inset-0 z-50 bg-slate-950/70 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 text-center shadow-2xl">
+            <h3 class="font-display font-bold text-base text-slate-900">Hapus Postingan Ini?</h3>
+            <p class="text-xs text-slate-500 mt-1">Data akan dihapus secara permanen.</p>
+            <div class="grid grid-cols-2 gap-2 mt-4">
+                <button type="button" onclick="closeDeleteModal()" class="py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">Batal</button>
+                <button type="button" id="confirm-delete-btn" class="py-2 rounded-xl bg-rose-600 text-white font-bold text-xs">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INPUT / KONFIRMASI IN-APP -->
+    <div id="inapp-dialog-modal" class="fixed inset-0 z-[110] bg-slate-950/70 backdrop-blur-xs hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 space-y-3.5">
+            <h3 id="inapp-dialog-title" class="font-display font-bold text-base text-slate-900">Konfirmasi</h3>
+            <p id="inapp-dialog-message" class="text-xs text-slate-600 leading-relaxed"></p>
+            <input type="text" id="inapp-dialog-input" class="hidden w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 outline-none focus:border-emerald-600">
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button type="button" id="inapp-dialog-cancel" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">Batal</button>
+                <button type="button" id="inapp-dialog-confirm" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs">Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SKRIP APLIKASI TERMODULARISASI -->
+    <script src="js/config.js"></script>
+    <script src="js/ledger.js"></script>
+    <script src="js/wa-report.js"></script>
+    <script src="js/takziah.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
