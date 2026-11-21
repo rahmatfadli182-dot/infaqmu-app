@@ -1,0 +1,71 @@
+/* =====================================================================
+   GAYA TAMPILAN UTAMA & ALA INSTAGRAM (style.css)
+   ===================================================================== */
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #f8fafc;
+    color: #0f172a;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.font-display {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Cincin Gradasi Instagram untuk Foto Profil & Story Highlights */
+.story-ring-ig {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    padding: 2.5px;
+}
+
+.story-ring-emerald {
+    background: linear-gradient(135deg, #10b981 0%, #059669 50%, #f59e0b 100%);
+    padding: 2.5px;
+}
+
+/* Sembunyikan Scrollbar Horizontal pada Sorotan & Filter */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Animasi Keypad & Double Tap Heart */
+@keyframes shakePin {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+.animate-shake {
+    animation: shakePin 0.35s ease-in-out;
+}
+
+@keyframes popHeart {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.25); opacity: 1; }
+    100% { transform: scale(1); opacity: 0; }
+}
+
+.animate-double-tap-heart {
+    animation: popHeart 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Keadaan Terkunci (Disabled) Form Rincian Laporan Bulanan */
+.wa-form-locked input:disabled,
+.wa-form-locked select:disabled {
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+    opacity: 0.92;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
