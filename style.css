@@ -99,3 +99,27 @@ body {
         display: none !important;
     }
 }
+/* Mengunci kolom ke-2 (Nama Anggota) di sisi kiri saat tabel digeser horizontal */
+.takziah-table-wrapper,
+.table-responsive,
+.table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.takziah-table th:nth-child(2),
+.takziah-table td:nth-child(2),
+table th:nth-child(2),
+table td:nth-child(2) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: #ffffff;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.06);
+}
+
+.takziah-table thead th:nth-child(2),
+table thead th:nth-child(2) {
+  z-index: 3;
+  background-color: #f5dec2;
+}
